@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Online Code Editor</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.14/ace.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1e1e1e;
+            color: white;
+            padding: 20px;
+        }
+
+        select,
+        button {
+            padding: 6px 12px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        pre {
+            background-color: #333;
+            color: lime;
+            padding: 10px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            border-radius: 4px;
+        }
+
+        #editor {
+            border: 1px solid #555;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        .toolbar {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>Welcome, {{ username }}!</h2>
+    <p>Write your code below:</p>
+
+    <!-- Removed history dropdown and clear history button -->
+
+    <!-- ✅ Main form for code execution -->
+    <form method="POST" action="/run_code">
+        <div class="toolbar">
+            <select name="language" id="languageSelect">
+                <option value="python" {% if language=='python' %}selected{% endif %}>Python</option>
+                <option value="c" {% if language=='c' %}selected{% endif %}>C</option>
+                <option value="javascript" {% if language=='javascript' %}selected{% endif %}>JavaScript</option>
+            </select>
+
+            <button type="button" onclick="copyCode()">📋 Copy</button>
+            <button type="button" onclick="downloadCode()">💾 Download</button>
+            <button type="button" onclick="toggleTheme()">🌓 Toggle Theme</button>
+        </div>
+
+        <div id="editor" style="height: 300px; width: 100%;">{{ code or '' }}</div>
+        <input type="hidden" name="code" id="hiddenCode">
+        <br>
+        <button type="submit">▶️ Run</button>
+    </form>
+
+    {% if output %}
+    <h3>Output:</h3>
+    <pre>{{ output }}</pre>
+    {% endif %}
+
+    <script>
+        var editor = ace.edit("editor");
+        var currentTheme = "monokai";
+        editor.setTheme("ace/theme/" + currentTheme);
+        editor.session.setMode("ace/mode/{{ language or 'python' }}");
+
+        // Set code in hidden input before submit
+        document.querySelector("form[action='/run_code']").addEventListener("submit", function () {
+            document.getElementById("hiddenCode").value = editor.getValue();
+        });
+
+        // Language change update mode
+        document.getElementById("languageSelect").addEventListener("change", function () {
+            const lang = this.value;
+            let mode = "text";
+            if (lang === "python") mode = "python";
+            else if (lang === "c") mode = "c_cpp";
+            else if (lang === "javascript") mode = "javascript";
+            editor.session.setMode("ace/mode/" + mode);
+        });
+
+        // Copy to clipboard
+        function copyCode() {
+            navigator.clipboard.writeText(editor.getValue())
+                .then(() => alert("Code copied to clipboard!"))
+                .catch(() => alert("Failed to copy code."));
+        }
+
+        // Download code as file
+        function downloadCode() {
+            const code = editor.getValue();
+            const lang = document.getElementById("languageSelect").value;
+            const blob = new Blob([code], { type: "text/plain" });
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = `code.${lang === 'python' ? 'py' : lang === 'c' ? 'c' : 'js'}`;
+            a.click();
+        }
+
+        // Toggle editor theme
+        function toggleTheme() {
+            currentTheme = (currentTheme === "monokai") ? "github" : "monokai";
+            editor.setTheme("ace/theme/" + currentTheme);
+        }
+    </script>
+</body>
+
+</html>

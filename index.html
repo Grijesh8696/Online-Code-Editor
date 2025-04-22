@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Online Code Editor</title>
+    <style>
+        body { font-family: Arial; margin: 0; padding: 20px; background: #f0f0f0; }
+        #editor { height: 300px; width: 100%; border: 1px solid #ccc; }
+        .output { margin-top: 20px; background: #222; color: #0f0; padding: 10px; min-height: 100px; }
+        select, button { padding: 10px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <h2>Online Code Editor</h2>
+
+    <label for="language">Select Language:</label>
+    <select id="language">
+        <option value="python">Python</option>
+        <option value="c">C</option>
+        <option value="javascript">JavaScript</option>
+    </select>
+
+    <div id="editor">// Write your code here</div>
+
+    <button onclick="runCode()">Run Code</button>
+
+    <div class="output" id="output">Output will appear here...</div>
+
+    <!-- Ace Editor CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.14/ace.js"></script>
+    <script>
+        const editor = ace.edit("editor");
+        editor.setTheme("ace/theme/monokai");
+        editor.session.setMode("ace/mode/python");
+
+        document.getElementById("language").addEventListener("change", function () {
+            const lang = this.value;
+            editor.session.setMode("ace/mode/" + lang);
+        });
+
+        function runCode() {
+            const code = editor.getValue();
+            const lang = document.getElementById("language").value;
+
+            fetch("/run", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ code: code, language: lang })
+            })
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById("output").innerText = data.output;
+            })
+            .catch(err => {
+                document.getElementById("output").innerText = "Error: " + err;
+            });
+        }
+    </script>
+</body>
+</html>
